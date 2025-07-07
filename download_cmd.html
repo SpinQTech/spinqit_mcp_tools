@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>spinqit-mcp-tools-installer-cmd-download</title>
+</head>
+<body>
+</body>
+<script>
+  // 读取query，如果有win则下载 https://static-cdn.spinq.cn/mcp_server_cmd/mcpenv-installer-win-x86_64.bat
+  // 如果有mac则下载 https://static-cdn.spinq.cn/mcp_server_cmd/mcpenv-installer-mac.sh
+  const urlParams = new URLSearchParams(window.location.search);
+  const isWin = urlParams.has('win');
+  const isMac = urlParams.has('mac');
+  
+  const a = document.createElement('a');
+  if (isWin) {
+    // 创建download a标签
+    a.href = 'https://static-cdn.spinq.cn/mcp_server_cmd/mcpenv-installer-win-x86_64.bat';
+    a.download = 'mcpenv-installer-win-x86_64.bat';
+  } else if (isMac) {
+    a.href = 'https://static-cdn.spinq.cn/mcp_server_cmd/mcpenv-installer-mac.sh';
+    a.download = 'mcpenv-installer-mac.sh';
+  }
+  a.click();
+</script>
+</html>
