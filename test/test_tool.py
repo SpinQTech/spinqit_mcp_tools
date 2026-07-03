@@ -1,34 +1,38 @@
-#request,调用本地localhost:5000/submit
+# request: call local localhost:5000/submit
 import json
 import os
 import requests
 import logging
+import tempfile
 from mcp.server.fastmcp import FastMCP
-from spinqit_mcp_tools.compiler import get_compiler
-from spinqit_mcp_tools.backend import get_spinq_cloud
-from spinqit_mcp_tools.backend.client.spinq_cloud_client import SpinQCloudClient
+from spinqit.compiler import get_compiler
+from spinqit.backend import get_spinq_cloud
+from spinqit.backend.client.spinq_cloud_client import SpinQCloudClient
 from Crypto.Hash import SHA256
 from Crypto.Signature import PKCS1_v1_5 as Signature_pkcs1_v1_5
 from Crypto.PublicKey import RSA
-from spinqit_mcp_tools.model.spinqCloud.task import Task
-from spinqit_mcp_tools.model.spinqCloud.circuit import graph_to_circuit, convert_cz
+from spinqit.model.spinqCloud.task import Task
+from spinqit.model.spinqCloud.circuit import graph_to_circuit, convert_cz
 import sys
 from pathlib import Path
 
 import base64
-# 获取当前文件的绝对路径，并向上追溯到项目根目录（假设根目录是 spinqit_task_env 的父级）
+
+DEFAULT_SPINQ_CLOUD_HOST = "http://cloud.spinq.cn:6060"
+
+# Get the absolute path of the current file and trace back to the project root.
 current_dir = Path(__file__).parent
-project_root = current_dir  # 根据实际层级调整
+project_root = current_dir  # Adjust according to the actual directory depth.
 sys.path.insert(0, str(project_root))
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 logger.debug("Starting Submit qasm task click initialization")
 
 
-# 初始化MCP服务器
+# Initialize the MCP server
 try:
     logger.debug("Submit qasm task")
     mcp = FastMCP("qasm_submit")
@@ -38,7 +42,7 @@ except Exception as e:
     raise
 
 def get_user_and_key():
-    # 从cloud.spinq.cn进行注册获取用户名并在用户中心配置私钥
+    # Register at cloud.spinq.cn to get a username and configure the private key in the user center.
     user_name = os.environ.get("SPINQCLOUDUSERNAME")
     private_key_path = os.environ.get("PRIVATEKEYPATH")
     if not user_name:
@@ -63,7 +67,33 @@ def sign_message(user_name, private_key):
     sign = signer.sign(digest)
     return base64.b64encode(sign).decode("utf-8")
 
-# 输出环境变量
+
+def get_cloud_host():
+    return (
+        os.environ.get("SPINQCLOUDHOST")
+        or os.environ.get("SPINQCLOUD_HOST")
+        or DEFAULT_SPINQ_CLOUD_HOST
+    )
+
+
+def get_cloud_client(user_name, private_key):
+    signature = sign_message(user_name, private_key)
+    return SpinQCloudClient(user_name, signature, get_cloud_host())
+
+
+def compile_qasm(qasm_str):
+    comp = get_compiler("qasm")
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile("w", suffix=".qasm", delete=False, encoding="utf-8") as temp_qasm:
+            temp_qasm.write(qasm_str)
+            temp_path = temp_qasm.name
+        return comp.compile(temp_path, 0)
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+# Output environment variables
 @mcp.tool()
 def get_self_env():
     """get self env"""
@@ -73,57 +103,60 @@ def get_self_env():
         env_dict[key] = value
     return env_dict
 
-# 获取一系列可运行平台的编号,用于提交任务
+# Retrieve available platform codes for task submission
 def get_platforms():
     user_name, private_key = get_user_and_key()
-    signature = sign_message(user_name, private_key)
-    api_client = SpinQCloudClient(user_name, signature)
+    api_client = get_cloud_client(user_name, private_key)
     api_client.login()
     res = api_client.retrieve_remote_platforms()
     res_entity = json.loads(res.content)
     print(res_entity)
     return res_entity
 
-# 定义qasm提交到云
+# Submit QASM to the cloud
 @mcp.tool()
 def qasm_submit(qasm_str, task_name, platform_code='simulator') -> json:
     """
-    提交一个 QASM 格式的量子线路到云端进行计算。可能有的平台是核磁体系的gemini, triangulum,超导体系superconduct，和模拟器simulator，注意可能有_vp后缀，具体要从get_platforms工具获取。
+    Submit a QASM quantum circuit to the cloud for execution. Available platforms
+    may include NMR systems such as gemini and triangulum, superconducting systems,
+    and the simulator. Platform codes may have a _vp suffix; use get_platforms to
+    retrieve the concrete values.
 
     Args:
-        qasm_str (str): QASM 格式的量子线路字符串，不应包含注释或多余转义符，不支持measure。
-        task_name (str): 任务名称，用于标识本次提交。
-        platform_code (str, optional): 运行平台代码，默认为 'simulator'，
+        qasm_str (str): QASM quantum circuit text. It should not contain comments,
+            extra escape characters, or measure statements.
+        task_name (str): Task name used to identify this submission.
+        platform_code (str, optional): Execution platform code. Defaults to 'simulator'.
 
     Returns:
-        dict: 云端返回的任务提交结果，包含任务ID等信息。
+        dict: Cloud task submission result, including the task ID and related metadata.
 
     Raises:
-        ValueError: 如果 QASM 字符串包含不支持的内容或环境变量未设置。
-        FileNotFoundError: 如果私钥文件不存在。
+        ValueError: If the QASM string contains unsupported content or required
+            environment variables are not set.
+        FileNotFoundError: If the private key file does not exist.
     """
     private_key_path = os.environ.get("PRIVATEKEYPATH")
     user_name, private_key = get_user_and_key()
     logger.debug(f"submit qasm task to spinq cloud with qasm_str={qasm_str}")
-    # 检查qasm是不是过度转义
+    # Check whether the QASM text is over-escaped.
     if "\\" in qasm_str:
-        raise ValueError("提交的QASM 代码不需要带有注释，注意不要过度转义。")
-    # qasm_str中不支持measure，
+        raise ValueError("The submitted QASM code should not include comments or excessive escaping.")
+    # qasm_str does not support measure statements.
     if "measure" in qasm_str:
         logger.error("qasm_str contains measure, which is not supported")
         raise ValueError("qasm_str contains measure, which is not supported")
-    comp = get_compiler("qasm")
-    # 编译QASM文本
-    exe = comp.compile(qasm_str, 0)
-    backend = get_spinq_cloud(user_name, private_key_path)
-    signature = sign_message(user_name, private_key)
-    api_client = SpinQCloudClient(user_name, signature)
+    exe = compile_qasm(qasm_str)
+    if exe is None:
+        raise ValueError("QASM compilation failed. Check the syntax and the gate set supported by spinqit.")
+    backend = get_spinq_cloud(user_name, private_key_path, get_cloud_host())
+    api_client = get_cloud_client(user_name, private_key)
     api_client.login()
 
     # circuit, qubit_mapping = backend.transpile("gemini_vp", exe)
-    qnum = exe.qnum # 对于模拟器来说需要设置比特数与qasm匹配
+    qnum = exe.qnum # The simulator requires the qubit count to match the QASM.
     p = backend.get_platform(platform_code)
-    # 根据比特数构造mapping {0: 0, 1: 1}
+    # Build a mapping from the qubit count, for example {0: 0, 1: 1}.
     init_mapping = {}
     for i in range(qnum):
         init_mapping[i] = i
@@ -134,13 +167,11 @@ def qasm_submit(qasm_str, task_name, platform_code='simulator') -> json:
     print(res_entity)
     return res_entity
 
-# 使用taskid查看实验结果
+# Query experiment results by task ID
 @mcp.tool()
 def get_task_result_by_id(task_id) -> json:
     user_name, private_key = get_user_and_key()
-    # backend = get_spinq_cloud(user_name, private_key_path)
-    signature = sign_message(user_name, private_key)
-    api_client = SpinQCloudClient(user_name, signature)
+    api_client = get_cloud_client(user_name, private_key)
     api_client.login()
     task_res = api_client.task_result_by_id(task_id)
     print(task_res,"task_res")
@@ -154,7 +185,7 @@ def run_server():
     """Run the MCP server."""
     try:
         logger.debug("Starting MCP server with stdio transport")
-        mcp.run(transport='stdio')  # 或者 'sse'，根据你的需求
+        mcp.run(transport='stdio')  # Or 'sse', depending on your needs.
         logger.debug("MCP server exited normally")
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON received: {e}")
@@ -162,12 +193,12 @@ def run_server():
         logger.error(f"MCP server failed: {e}")
         raise
     
-# 运行服务器
+# Run the server
 if __name__ == "__main__":
     qasm_str = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n\nqreg q[3];\n\nh q[0];\ncx q[0], q[1];\ncx q[1], q[2];"
     task_name = "test_task"
     platform_code = "triangulum_vp"
-    # 提交任务
+    # Submit the task
     res = qasm_submit(qasm_str, task_name, platform_code)
     print("Task submitted:", res)
     
