@@ -4,11 +4,13 @@
   <a href="README_zh.md">中文</a> | 
   <a href="README.md">English</a>
 </div>
-本项目基于mcp-server来支持ai大模型高效调用spinq的量子计算硬件资源。
 
-提供适用于 **Windows** 和 **macOS** 的 `spinqit_mcp_tools` 一键安装脚本。这些脚本会自动检查 Python 环境（需 3.10 或更高版本）并安装所需的 `spinqit_mcp_tools` 依赖包。如果系统中没有合适的 Python 环境，脚本会尝试使用 **Conda** 创建环境，或引导用户手动安装 Python。
+本项目基于 mcp-server 来支持 AI 大模型高效调用 SpinQ 的量子计算硬件资源。
+
+提供适用于 **Windows** 和 **macOS** 的 `spinqit_mcp_tools` 一键安装脚本。这些脚本会自动检查 Python 环境（目前建议使用 Python 3.10）并安装所需的 `spinqit_mcp_tools` 依赖包。如果系统中没有合适的 Python 环境，脚本会尝试使用 **Conda** 创建环境，或引导用户手动安装 Python。
 
 ## 目录
+
 - [前置条件](#前置条件)
 - [脚本安装步骤](#脚本安装步骤)
   - [Windows](#windows)
@@ -21,8 +23,9 @@
 ## 前置条件
 
 在运行安装脚本之前，请确保满足以下条件：
-- **Python 3.10 或更高版本**：`spinqit_mcp_tools` 要求 Python 3.10 或以上版本。
-- **Conda（可选）**：如果系统中没有 Python 3.10，脚本可使用 Anaconda 创建环境。请从 [Anaconda](https://www.anaconda.com/download)下载。
+
+- **建议使用 Python 3.10**：当前 `spinqit_mcp_tools` 环境建议使用 Python 3.10。
+- **Conda（可选）**：如果系统中没有 Python 3.10，脚本可使用 Anaconda 创建环境。请从 [Anaconda](https://www.anaconda.com/download) 下载。
 - **网络连接**：需要联网以通过 `pip` 下载 `spinqit_mcp_tools` 依赖包。
 - **macOS 终端权限**：确保终端支持 `bash`。
 
@@ -32,42 +35,46 @@
 
 1. **下载脚本**
    - 从以下链接下载 `mcpenv-installer-win-x86_64.bat` 脚本：
+
      <a href="https://static-cdn.spinq.cn/mcp_server_cmd/download_cmd.html?win">下载 Windows 安装脚本</a>
 
 2. **运行脚本**
-   - 双击mcpenv-installer-win-x86_64.bat，运行安装
+   - 双击 `mcpenv-installer-win-x86_64.bat` 运行安装。
 
 3. **脚本行为**
-   - **如果系统中已安装 Python 3.10 或更高版本**：脚本将直接安装 `spinqit_mcp_tools` 依赖包，并输出 Python 环境路径和 `mcp-server` 的执行命令。
+   - **如果系统中已安装 Python 3.10**：脚本将直接安装 `spinqit_mcp_tools` 依赖包，并输出 Python 环境路径和 `mcp-server` 的执行命令。
    - **如果没有 Python 3.10 但已安装 Conda**：脚本会创建一个名为 `mcp-server-py310` 的 Conda 环境（使用 Python 3.10），安装依赖包，并输出环境路径和执行命令。
    - **如果既没有 Python 3.10 也没有 Conda**：脚本会提示您从 [Python 官网](https://www.python.org/downloads/) 或 [Anaconda 官网](https://www.anaconda.com/download) 下载并安装 Python 3.10 或 Conda，安装后再重新运行脚本。
 
 4. **安装成功**
-    - ![alt text](image-6.png)
-    - 记录执行的命令（如我这里的C:\ProgramData\Anaconda3\envs\mcp-server-py310\python.exe -m spinqit_mcp_tools.qasm_submitter），并且到cloud.spinq.cn注册账号配置您的公钥
+   - ![alt text](image-6.png)
+   - 记录执行命令，例如 `C:\ProgramData\Anaconda3\envs\mcp-server-py310\python.exe -m spinqit_mcp_tools.qasm_submitter`。
+   - 到 [SpinQ Cloud](https://cloud.spinq.cn) 注册账号并配置您的公钥，然后在 MCP server 配置中填写 `PRIVATEKEYPATH`、`SPINQCLOUDUSERNAME` 和 `SPINQCLOUDHOST`。默认 host 为 `http://cloud.spinq.cn:6060`，也支持配置其他 host 地址。
 
 ### macOS
 
 1. **下载脚本**
    - 从以下链接下载 `mcpenv-installer-mac.sh` 脚本：
-     <a href="https://static-cdn.spinq.cn/mcp_server_cmd/download_cmd.html?mac">下载 macOS 安装脚本</a>
 
+     <a href="https://static-cdn.spinq.cn/mcp_server_cmd/download_cmd.html?mac">下载 macOS 安装脚本</a>
 
 2. **运行脚本**
    - 执行脚本：
+
      ```bash
      sudo bash ./mcpenv-installer-mac.sh
      ```
 
 3. **脚本行为**
    - 与 Windows 脚本类似，macOS 脚本会：
-     - 检查是否存在 Python 3.10 或更高版本，如果存在则安装 `spinqit_mcp_tools`。
+     - 检查是否存在 Python 3.10，如果存在则安装 `spinqit_mcp_tools`。
      - 如果没有 Python 3.10，检查 Conda 是否存在，并创建一个 `mcp-server-py310` 环境。
      - 如果既没有 Python 3.10 也没有 Conda，提示用户安装 Python 3.10 或 Conda，然后重新运行脚本。
 
 ### 输出结果
 
 脚本成功运行后，将输出以下信息：
+
 - **Python 环境路径**：使用的 Python 可执行文件路径，例如：
   - Windows：`C:\path\to\conda\envs\mcp-server-py310\python.exe`
   - macOS：`/path/to/conda/envs/mcp-server-py310/bin/python`
@@ -83,25 +90,36 @@
   - 从 [Python 官网](https://www.python.org/downloads/) 下载并安装 Python 3.10，确保添加到 PATH。
   - 安装完成后重新运行脚本。
 - **Conda 未被识别**：
-  - 在没有python 3.10以上版本时确保已安装 Anaconda，并将其添加到 PATH。
+  - 在没有 Python 3.10 时确保已安装 Anaconda，并将其添加到 PATH。
 - **pip 安装失败**：
   - 检查网络连接是否正常。
 - **Conda 环境创建失败**：
   - 检查 Conda 安装是否完整，或从 [Anaconda 官网](https://www.anaconda.com/download) 重新安装。
 
-
 ### 使用
-- 根据python安装目录使用：
-  - /pathtopython/python -m spinqit_mcp_tools.qasm_submitter
 
-### 环境测试情况 （创建并提交一个2比特量子线路qasm到云平台，并查看结果）
-- cursor
+根据 Python 安装目录运行：
+
+```bash
+/pathtopython/python -m spinqit_mcp_tools.qasm_submitter
+```
+
+### 环境测试
+
+创建并提交一个 2 比特量子线路 QASM 到云平台，并查看结果。
+
+- Cursor
   - 配置方式
-   ![alt text](image-7.png)
+
+    ![alt text](image-7.png)
+
   - 结果
-   ![alt text](image-5.png)
+
+    ![alt text](image-5.png)
+
   - 配置项
-    ```
+
+    ```json
     {
       "mcpServers": {
         "qasm-submitter": {
@@ -114,23 +132,25 @@
             "spinqit_mcp_tools.qasm_submitter"
           ],
           "env": {
-            "PRIVATEKEYPATH":"C:\\Users\\ylin\\.ssh\\id_rsa",
-            "SPINQCLOUDUSERNAME":"a492760446"
+            "PRIVATEKEYPATH": "<Your Privatekey Path>",
+            "SPINQCLOUDUSERNAME": "<Your SpinQ Cloud Username>",
+            "SPINQCLOUDHOST": "http://cloud.spinq.cn:6060"
           }
         }
       }
     }
     ```
 
-- vscode cline插件
+- VSCode Cline 插件
   - 配置项：
-    ```
+
+    ```json
     {
       "mcpServers": {
         "qasm-submitter": {
           "disabled": false,
           "timeout": 60,
-          "transportType": "stdio", 
+          "transportType": "stdio",
           "command": "cmd",
           "args": [
             "/C",
@@ -139,21 +159,33 @@
             "spinqit_mcp_tools.qasm_submitter"
           ],
           "env": {
-            "PRIVATEKEYPATH": "C:\\Users\\ylin\\.ssh\\id_rsa",
-            "SPINQCLOUDUSERNAME": "a492760446"
+            "PRIVATEKEYPATH": "<Your Privatekey Path>",
+            "SPINQCLOUDUSERNAME": "<Your SpinQ Cloud Username>",
+            "SPINQCLOUDHOST": "http://cloud.spinq.cn:6060"
           }
         }
       }
     }
     ```
+
   - 配置方式
-   ![alt text](image-2.png)
+
+    ![alt text](image-2.png)
+
   - 结果
-   ![alt text](image-3.png)
+
+    ![alt text](image-3.png)
 
 ## 手动安装步骤
-- python3.10以上版本， pip install spinqit_mcp_tools
-- 配置python -m spinqit_mcp_tools.qasm_submitter为mcp-client启动命令
+
+- 安装 Python 3.10，然后运行：
+
+  ```bash
+  pip install spinqit_mcp_tools
+  ```
+
+- 将 `python -m spinqit_mcp_tools.qasm_submitter` 配置为 MCP client 启动命令。
+- 设置必需的环境变量：`PRIVATEKEYPATH`、`SPINQCLOUDUSERNAME` 和 `SPINQCLOUDHOST`。
 
 ## 许可证
 

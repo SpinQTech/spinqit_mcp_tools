@@ -8,16 +8,13 @@ def parse_requirements(filename):
 
 setup(
     name="spinqit_mcp_tools",
-    version="0.0.1",
-    packages=find_packages(include=['spinqit_mcp_tools*']),  # 自动发现包
+    version="0.0.2",
+    packages=find_packages(include=['spinqit_mcp_tools*']),
     package_data={
-        # 键：包名；值：文件列表（支持通配符）
-        'spinqit_mcp_tools.compiler.qasm.include': ['*.inc'],  # QASM include文件
-        'spinqit_mcp_tools': ['*.txt', '*.md'],          # 其他需要打包的非Python文件
-        '': ['*.png'],  # 如果需要包含图片文件
+        'spinqit_mcp_tools': ['*.txt', '*.md'],
+        '': ['*.png'],
     },
-    # packages=['spinqit_mcp_tools', 'spinqit_mcp_tools.spinqit_mcp_tools'],
-    include_package_data=True,  # 包含非 .py 文件
+    include_package_data=True,
     install_requires=parse_requirements('requirements.txt'),
     author="SpinQ",
     author_email="spinqit@spinq.cn",

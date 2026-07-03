@@ -1,3 +1,2 @@
-include spinqit_task_manager/spinqit_task_manager/compiler/qasm/include/qelib1.inc
-recursive-include spinqit_task_manager/spinqit_task_manager/compiler/qasm/include *
 include *.png
+include requirements.txt
